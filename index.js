@@ -1,7 +1,23 @@
 const inquirer = require('inquirer');
-const {Circle, Square, Triangle} = require("./lib/shapes");
+const filesystem = require('./node_modules/graceful-fs/graceful-fs')
+const { Circle, Square, Triangle } = require("./lib/shapes");
 
-// An array of questions to be positied to the user using inquirer
+class SVG {
+    textElement = '';
+    shapeElement = '';
+
+    render() {
+        return `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="300" height="200">${this.shapeElement}${this.textElement}</svg>`;
+    }
+    setTextElement(text, color) {
+        this.textElement = `<text x="150" y="125" font-size="60" text-anchor="middle" fill="${color}">${text}</text>`;
+    }
+    setShapeElement(shape) {
+        this.shapeElement = shape.render();
+    }
+}
+
+// An array of questions to be posed to the user using inquirer
 const questions = [
     {
         type: "input",
@@ -26,56 +42,57 @@ const questions = [
     },
 ];
 
-// Function to write data to file
+// Function to write data to a file
 function writeToFile(fileName, data) {
-    filesystem.writeFile(fileName, data, function (err) {
+    filesystem.writeFile(fileName, data, function (err) { // Corrected the variable name
         if (err) {
             return console.log(err);
         }
         console.log("Generated logo");
     });
-};
+}
 
 async function init() {
-	var svgString = "";
-	var fileName = "logo.svg";
+    var svgString = "";
+    var fileName = "logo.svg";
     var logoText = "";
-    let logoShape;
+    let textColor; // Declare textColor variable
+    let shapeColor; // Declare shapeColor variable
+    let shapeType;
 
-    //Prompt the user for answers
+    // Prompt the user for answers
     const answers = await inquirer.prompt(questions);
 
-	if (answers.text.length > 0 && answers.text.length < 3) {
-		logoText = answers.text;
-	} else {
-		console.log("Please type 1-3 characters");
+    if (answers.text.length > 0 && answers.text.length < 4) {
+        logoText = answers.text;
+    } else {
+        console.log("Please type 1-3 characters");
         return;
-	}
+    }
 
-	textColor = answers["text-color"];
-	shapeColor = answers["shape-color"];
-	shapeType = answers["shape-type"];
+    textColor = answers["text-color"];
+    shapeColor = answers["shape-color"];
+    shapeType = answers["shape-type"];
 
-	if (shapeType === "Square") {
-		logoShape = new Square();
-	}
+    let logoShape;
 
-	else if (shapeType === "Circle") {
-		logoShape = new Circle();
-	}
+    if (shapeType === "Square") {
+        logoShape = new Square();
+    } else if (shapeType === "Circle") {
+        logoShape = new Circle();
+    } else if (shapeType === "Triangle") {
+        logoShape = new Triangle();
+    }
 
-	else if (shapeType === "Triangle") {
-		logoShape = new Triangle();
-	}
-	logoShape.setColor(shapeColor);
+    logoShape.setColor(shapeColor);
 
-	// Create a new Svg instance and add the shape and text elements to it
-	var svg = new Svg();
-	svg.setTextElement(logoText, textColor);
-	svg.setShapeElement(logoShape);
-	svgString = svg.render();
+    // Create a new Svg instance and add the shape and text elements to it
+    var svg = new SVG();
+    svg.setTextElement(logoText, textColor);
+    svg.setShapeElement(logoShape);
+    svgString = svg.render();
 
-	writeToFile(fileName, svgString); 
-};
+    writeToFile(fileName, svgString);
+}
 
 init();
